@@ -48,17 +48,17 @@ def create_xy_grid(self:GaborLayer):
 def build(self:GaborLayer, batch_input_shape):
 
         self.gammas = self.add_weight(name='gammas', shape=[self.filters, 1, 1, 1],
-                                            initializer='ones', trainable=True)
+                                            initializer='random_normal', trainable=True)
         self.psis = self.add_weight(name='psis', shape=[self.filters, 1, 1, 1],
-                                   initializer='ones', trainable=True)
+                                   initializer='random_normal', trainable=True)
         self.sigmas = self.add_weight(name='sigmas', shape=[self.filters, 1, 1, 1],
-                                   initializer='ones', trainable=True)
+                                   initializer='random_normal', trainable=True)
         self.lambdas = self.add_weight(name='lambdas', shape=[self.filters, 1, 1, 1],
-                                   initializer='ones', trainable=True)
+                                   initializer='random_normal', trainable=True)
 
         if self.use_alphas:
             self.alphas = self.add_weight(name='alphas', shape=[self.filters * self.orientations, 1, 1],
-                                   initializer='ones', trainable=True)
+                                   initializer='random_normal', trainable=True)
 
 
         thetas = (tf.range(0, self.orientations, dtype=tf.float32) * 2 * self.pi) / self.orientations
