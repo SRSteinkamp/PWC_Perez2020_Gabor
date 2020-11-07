@@ -46,29 +46,36 @@ def create_xy_grid(self:GaborLayer):
 # Cell
 @patch
 def build(self:GaborLayer, batch_input_shape):
+        self.input_channels = batch_input_shape[-1]
 
-        self.gammas = self.add_weight(name='gammas', shape=[self.filters, 1, 1, 1],
+        self.gammas = self.add_weight(name='gammas', shape=[self.filters, 1, 1, 1, 1],
                                             initializer='random_normal', trainable=True)
-        self.psis = self.add_weight(name='psis', shape=[self.filters, 1, 1, 1],
+        self.psis = self.add_weight(name='psis', shape=[self.filters, 1, 1, 1, 1],
                                    initializer='random_normal', trainable=True)
-        self.sigmas = self.add_weight(name='sigmas', shape=[self.filters, 1, 1, 1],
+        self.sigmas = self.add_weight(name='sigmas', shape=[self.filters, 1, 1, 1, 1],
                                    initializer='random_normal', trainable=True)
-        self.lambdas = self.add_weight(name='lambdas', shape=[self.filters, 1, 1, 1],
+        self.lambdas = self.add_weight(name='lambdas', shape=[self.filters, 1, 1, 1, 1],
                                    initializer='random_normal', trainable=True)
 
         if self.use_alphas:
-            self.alphas = self.add_weight(name='alphas', shape=[self.filters * self.orientations, 1, 1],
+            self.alphas = self.add_weight(name='alphas', shape=[self.filters * self.orientations, 1, 1, 1],
                                    initializer='random_normal', trainable=True)
 
+        if self.use_bias:
+            self.bias = self.add_weight(name='bias', shape=[self.filters * self.orientations],
+                                         initializer='zeros')
 
         thetas = (tf.range(0, self.orientations, dtype=tf.float32) * 2 * self.pi) / self.orientations
-        thetas = tf.reshape(thetas, (self.orientations, 1 ,1))
+        thetas = tf.reshape(thetas, (self.orientations, 1 ,1, 1))
         self.thetas = tf.Variable(thetas, name='thetas', trainable=self.learn_orientations)
 
         x, y = self.create_xy_grid()
 
-        x = x[None, :, :]
-        y = y[None, :, :]
+        x = x[None, :, :, None]
+        y = y[None, :, :, None]
+
+        x = tf.repeat(x, repeats=self.input_channels, axis=-1)
+        y = tf.repeat(y, repeats=self.input_channels, axis=-1)
 
         sines = tf.sin(self.thetas)
         cosines = tf.cos(self.thetas)
@@ -87,6 +94,12 @@ def build(self:GaborLayer, batch_input_shape):
 
         self.kernel = self.create_kernel()
 
+        self._convolution_op = functools.partial(nn_ops.convolution_v2, strides=self.strides,
+                                                padding=self.padding,
+                                                name="Gabor_Convolution")
+
+        super(GaborLayer, self).build(batch_input_shape)
+
 # Cell
 @patch
 def create_kernel(self:GaborLayer):
@@ -98,9 +111,24 @@ def create_kernel(self:GaborLayer):
     self.ori_gb = ori_gb
     ori_gb = tf.reshape(ori_gb,
                         (self.filters * self.orientations,
-                         *self.kernel_size))
+                         *self.kernel_size, self.input_channels))
 
     if self.use_alphas:
         ori_gb = self.alphas * ori_gb
 
     return ori_gb
+
+# Cell
+@patch
+def call(self:GaborLayer, X):
+    bs, h, w, inp_channels = X.shape
+
+    kernel = tf.transpose(self.kernel, [1, 2, 3, 0])
+
+    X = self._convolution_op(X, kernel)
+
+    if self.use_bias:
+        X = tf.nn.bias_add(X, self.bias)
+
+    X = self.activation(X)
+    return X

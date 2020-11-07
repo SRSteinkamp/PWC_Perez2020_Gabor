@@ -5,7 +5,8 @@ __all__ = ["index", "modules", "custom_doc_links", "git_url"]
 index = {"GaborLayer": "00_core.ipynb",
          "GaborLayer.create_xy_grid": "00_core.ipynb",
          "GaborLayer.build": "00_core.ipynb",
-         "GaborLayer.create_kernel": "00_core.ipynb"}
+         "GaborLayer.create_kernel": "00_core.ipynb",
+         "GaborLayer.call": "00_core.ipynb"}
 
 modules = ["core.py"]
 
