@@ -13,11 +13,13 @@ from tensorflow import keras
 from fastcore.nb_imports import *
 from fastcore.test import *
 from fastcore.foundation import *
+import warnings
 
 # Cell
 class GaborLayer(keras.layers.Layer):
     def __init__(self, filters, kernel_size, orientations, learn_orientations=False,
-                 use_bias=True, activation='relu', strides=(1, 1), padding='SAME', use_alphas=True, **kwargs):
+                 use_bias=True, activation='relu', strides=(1, 1),
+                 padding='SAME', use_alphas=True, **kwargs):
         super().__init__(**kwargs)
         self.filters = filters
         self.kernel_size = kernel_size
@@ -31,6 +33,13 @@ class GaborLayer(keras.layers.Layer):
         self.rank = 2
         self.pi = tf.constant(math.pi, dtype=tf.float32)
         self.use_alphas = use_alphas
+
+        if self.learn_orientations:
+            self.total_filters = self.filters
+            if self.orientations > 0:
+                warnings.warn('Orientations parameters is of no use.')
+        else:
+            self.total_filters = self.filters * self.orientations
 
 # Cell
 @patch
@@ -58,16 +67,20 @@ def build(self:GaborLayer, batch_input_shape):
                                    initializer='random_normal', trainable=True)
 
         if self.use_alphas:
-            self.alphas = self.add_weight(name='alphas', shape=[self.filters * self.orientations, 1, 1, 1],
+            self.alphas = self.add_weight(name='alphas', shape=[self.total_filters, 1, 1, 1],
                                    initializer='random_normal', trainable=True)
 
         if self.use_bias:
-            self.bias = self.add_weight(name='bias', shape=[self.filters * self.orientations],
+            self.bias = self.add_weight(name='bias', shape=[self.total_filters],
                                          initializer='zeros')
 
-        thetas = (tf.range(0, self.orientations, dtype=tf.float32) * 2 * self.pi) / self.orientations
-        thetas = tf.reshape(thetas, (self.orientations, 1 ,1, 1))
-        self.thetas = tf.Variable(thetas, name='thetas', trainable=self.learn_orientations)
+        if self.learn_orientations:
+            self.thetas = self.add_weight(name='thetas', shape=[self.filters, 1, 1, 1],
+                                          initializer='random_normal')
+        else:
+            thetas = (tf.range(0, self.orientations, dtype=tf.float32) * 2 * self.pi) / self.orientations
+            thetas = tf.reshape(thetas, (self.orientations, 1 ,1, 1))
+            self.thetas = tf.Variable(thetas, name='thetas', trainable=False)
 
         x, y = self.create_xy_grid()
 
@@ -77,52 +90,57 @@ def build(self:GaborLayer, batch_input_shape):
         x = tf.repeat(x, repeats=self.input_channels, axis=-1)
         y = tf.repeat(y, repeats=self.input_channels, axis=-1)
 
-        sines = tf.sin(self.thetas)
-        cosines = tf.cos(self.thetas)
-
-        self.sines = sines
-        self.cosines = cosines
-        xprime = x * cosines - y * sines
-        yprime = x * sines + y * cosines
-
-        xprime = xprime[None, :, :]
-        yprime = yprime[None, :, :]
-
-
-        self.x = tf.Variable(xprime, name='x', trainable=False)
-        self.y = tf.Variable(yprime, name='y', trainable=False)
-
-        self.kernel = self.create_kernel()
+        self.x = tf.Variable(x, name='x', trainable=False)
+        self.y = tf.Variable(y, name='y', trainable=False)
 
         self._convolution_op = functools.partial(nn_ops.convolution_v2, strides=self.strides,
                                                 padding=self.padding,
                                                 name="Gabor_Convolution")
+        self.kernel = self.create_kernel()
 
-        super(GaborLayer, self).build(batch_input_shape)
+        self.built = True
+        #super(GaborLayer, self).build(batch_input_shape)
 
 # Cell
 @patch
 def create_kernel(self:GaborLayer):
-    ori_y_term = self.gammas ** 2 * self.y ** 2
-    exponent_ori = (self.x ** 2 + ori_y_term) * self.sigmas ** 2
+    sines = tf.sin(self.thetas)
+    cosines = tf.cos(self.thetas)
+
+    xprime = self.x * cosines - self.y * sines
+    yprime = self.x * sines + self.y * cosines
+
+    if self.learn_orientations:
+        # Expanding in Filter direction
+        xprime = xprime[:, None, :, :]
+        yprime = yprime[:, None, :, :]
+    else:
+        # Expanding in Orientation direction
+        xprime = xprime[None, :, :, :]
+        yprime = yprime[None, :, :, :]
+
+    ori_y_term = self.gammas ** 2 * yprime ** 2
+    exponent_ori = (xprime ** 2 + ori_y_term) * self.sigmas ** 2
     gaussian_term_ori = tf.exp(-exponent_ori)
-    cosine_term = tf.cos(self.x * self.lambdas + self.psis)
+    cosine_term = tf.cos(xprime * self.lambdas + self.psis)
+
     ori_gb = gaussian_term_ori * cosine_term
-    self.ori_gb = ori_gb
     ori_gb = tf.reshape(ori_gb,
-                        (self.filters * self.orientations,
+                        (self.total_filters,
                          *self.kernel_size, self.input_channels))
 
     if self.use_alphas:
         ori_gb = self.alphas * ori_gb
 
-    return ori_gb
+    kernel = ori_gb
+    return kernel
+
 
 # Cell
 @patch
 def call(self:GaborLayer, X):
-    bs, h, w, inp_channels = X.shape
 
+    self.kernel = self.create_kernel()
     kernel = tf.transpose(self.kernel, [1, 2, 3, 0])
 
     X = self._convolution_op(X, kernel)
@@ -132,3 +150,26 @@ def call(self:GaborLayer, X):
 
     X = self.activation(X)
     return X
+
+
+# Cell
+@patch
+def get_config(self:GaborLayer):
+
+    config = super(GaborLayer, self).get_config().copy()
+    config.update({
+        'filters': self.filters,
+        'kernel_size': self.kernel_size,
+        'orientations': self.orientations,
+        'learn_orientations': self.learn_orientations,
+        'use_bias': self.use_bias,
+        'strides': self.strides,
+        'activation' : self.activation,
+        'padding': self.padding,
+        'rank': self.rank,
+        'pi': self.pi,
+        'use_alphas': self.use_alphas,
+        'kernel': self.kernel,
+        'total_filters': self.total_filters
+    })
+    return config

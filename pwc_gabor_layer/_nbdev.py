@@ -6,7 +6,8 @@ index = {"GaborLayer": "00_core.ipynb",
          "GaborLayer.create_xy_grid": "00_core.ipynb",
          "GaborLayer.build": "00_core.ipynb",
          "GaborLayer.create_kernel": "00_core.ipynb",
-         "GaborLayer.call": "00_core.ipynb"}
+         "GaborLayer.call": "00_core.ipynb",
+         "GaborLayer.get_config": "00_core.ipynb"}
 
 modules = ["core.py"]
 

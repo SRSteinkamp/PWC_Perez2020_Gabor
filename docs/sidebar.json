@@ -1,6 +1,7 @@
 {
   "pwc_gabor_layer": {
     "Overview": "/",
-    "module name here": "core.html"
+    "core": "core.html",
+    "Title": "experiments.html"
   }
 }

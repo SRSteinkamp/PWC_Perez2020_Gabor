@@ -10,8 +10,11 @@ entries:
       title: Overview
       url: /
     - output: web,pdf
-      title: module name here
+      title: core
       url: core.html
+    - output: web,pdf
+      title: Title
+      url: experiments.html
     output: web
     title: pwc_gabor_layer
   output: web
