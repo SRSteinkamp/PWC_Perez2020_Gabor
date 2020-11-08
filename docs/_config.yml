@@ -1,4 +1,4 @@
-repository: SRSteinkamp/pwc_gabor_layer
+repository: SRSteinkamp/PWC_Perez2020_Gabor/
 output: web
 topnav_title: pwc_gabor_layer
 site_title: pwc_gabor_layer
@@ -60,4 +60,4 @@ sidebars:
 - home_sidebar
 
 theme: jekyll-theme-cayman
-baseurl: /pwc_gabor_layer/
+baseurl: PWC_Perez2020_Gabor/
