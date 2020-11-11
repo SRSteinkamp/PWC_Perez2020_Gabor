@@ -13,6 +13,9 @@ entries:
       title: core
       url: core.html
     - output: web,pdf
+      title: Implementing AlexNet in Keras
+      url: alexnet.html
+    - output: web,pdf
       title: Title
       url: experiments.html
     output: web

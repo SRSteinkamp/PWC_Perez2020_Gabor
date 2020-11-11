@@ -2,6 +2,7 @@
   "pwc_gabor_layer": {
     "Overview": "/",
     "core": "core.html",
+    "Implementing AlexNet in Keras": "alexnet.html",
     "Title": "experiments.html"
   }
 }

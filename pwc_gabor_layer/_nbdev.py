@@ -16,7 +16,7 @@ index = {"GaborLayer": "00_core.ipynb",
 modules = ["core.py",
            "alexnet.py"]
 
-doc_url = "https://SRSteinkamp.github.io/pwc_gabor_layer/"
+doc_url = "https://SRSteinkamp.github.io/PWC_Perez2020_Gabor/"
 
 git_url = "https://github.com/SRSteinkamp/pwc_gabor_layer/tree/main/"
 

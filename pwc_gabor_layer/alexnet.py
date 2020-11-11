@@ -3,6 +3,14 @@
 __all__ = ['GaborBlock', 'ConvBlock', 'AlexNet']
 
 # Cell
+from .core import GaborLayer, SigmaRegularizer
+import tensorflow_datasets as tfds
+import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow import keras
+import numpy as np
+
+# Cell
 class GaborBlock(keras.Model):
     def __init__(self, filters_gabor, filters_conv,  kernel_size,
                  learn_orientations=False, strides=(1, 1),
