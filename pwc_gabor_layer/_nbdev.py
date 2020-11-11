@@ -8,9 +8,13 @@ index = {"GaborLayer": "00_core.ipynb",
          "GaborLayer.create_kernel": "00_core.ipynb",
          "GaborLayer.call": "00_core.ipynb",
          "GaborLayer.get_config": "00_core.ipynb",
-         "SigmaRegularizer": "00_core.ipynb"}
+         "SigmaRegularizer": "00_core.ipynb",
+         "GaborBlock": "01_alexnet.ipynb",
+         "ConvBlock": "01_alexnet.ipynb",
+         "AlexNet": "01_alexnet.ipynb"}
 
-modules = ["core.py"]
+modules = ["core.py",
+           "alexnet.py"]
 
 doc_url = "https://SRSteinkamp.github.io/pwc_gabor_layer/"
 
