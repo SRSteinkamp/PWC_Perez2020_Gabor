@@ -10,10 +10,12 @@ index = {"GaborLayer": "00_core.ipynb",
          "GaborLayer.get_config": "00_core.ipynb",
          "SigmaRegularizer": "00_core.ipynb",
          "GaborBlock": "01_alexnet.ipynb",
-         "AlexNet": "01_alexnet.ipynb"}
+         "AlexNet": "01_alexnet.ipynb",
+         "LeNet": "02_lenet.ipynb"}
 
 modules = ["core.py",
-           "alexnet.py"]
+           "alexnet.py",
+           "lenet.py"]
 
 doc_url = "https://SRSteinkamp.github.io/PWC_Perez2020_Gabor/"
 
